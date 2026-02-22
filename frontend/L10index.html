@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum</title>
+    <style>
+        body{ font-family: Arial, Helvetica, sans-serif; }
+        .controls{ margin: 12px 0; }
+        textarea#postInput{ width: 100%; height: 80px; padding: 8px; }
+        button{ padding: 8px 12px; margin: 4px; cursor: pointer; }
+        #posts{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; margin-top: 12px; }
+        .post-card{ border: 1px solid #ddd; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); background: #fff; }
+        .post-header{ display:flex; justify-content:space-between; align-items:center; font-size: 0.9rem; }
+        .author{ color: darkred; font-weight: bold; }
+        .post-message{ margin: 8px 0; white-space: pre-wrap; }
+        .post-actions{ display:flex; gap:8px; align-items:center; }
+        .filter-row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+    </style>
+</head>
+<body>
+    <h1 hidden id="accountLabel"></h1>
+    <button id="connectionButton">Connect</button>
+
+    <div hidden id="dapp">
+        <div class="controls">
+            <button id="getPostsButton">Refresh posts</button>
+            <button id="clearPostButton">Clear posts</button>
+        </div>
+
+        <div>
+            <textarea id="postInput" placeholder="Write your post..."></textarea>
+            <div>
+                <button id="makePostButton">Make post</button>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <input id="authorFilter" placeholder="Author address (leave empty for all)" style="flex:1; padding:8px" />
+            <button id="filterButton">Filter</button>
+            <button id="myPostsButton">My posts</button>
+        </div>
+
+        <div id="posts"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js"></script>
+    <script src="./contract_abi.js"></script>
+    <script src="./index.js"></script>
+</body>
+</html>

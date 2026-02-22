@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Contract</title>
+</head>
+<body>
+    <h1>Storage</h1>
+    <p>Current value: <span id="value">?</span></p>
+    <p>User: <span id="name">?</span> <span id="age">?</span> </p>
+    <input type="number" placeholder="Set value" id="number">
+    <button onclick="setValue()">Set value</button>
+    <button onclick="getUser()">Get user</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.umd.min.js"></script>
+    <script src="./scripts/contract_abi.js"></script>
+    <script>
+        const contract_address = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+        // ABI - Application Binnary Interface
+        const c_abi = [
+            "function get_value() public view returns(uint)"
+        ]
+
+        async function getUser(){
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const contract = new ethers.Contract(contract_address, abi, provider);
+            const user = await contract.get_user();
+            console.log(user.name)
+
+            document.getElementById("name").textContent = user.name;
+            document.getElementById("age").textContent = user.age;
+            
+        }
+
+        async function setValue(){
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await provider.send("eth_requestAccounts",[]);
+            const signer = await provider.getSigner();
+
+            const contract = new ethers.Contract(contract_address, abi, signer);
+            const value = document.getElementById("number").value;
+
+            const tx = await contract.set_value(value);
+
+            await tx.wait();
+            getValue();
+        }
+
+        async function getValue(){
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const contract = new ethers.Contract(contract_address, abi, provider);
+
+            const value = await contract.get_value();
+            document.getElementById("value").textContent = value.toString();
+        }
+
+        getValue();
+    </script>
+</body>
+</html>
