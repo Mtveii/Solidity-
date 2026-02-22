@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPosts();
     });
 
+    // Media UI handlers
+    const addMediaButton = document.getElementById('addMediaButton');
+    if(addMediaButton) addMediaButton.addEventListener('click', addMedia);
+
     if (window.ethereum) {
         web3 = new Web3(window.ethereum);
         // console.log("ABI: ", abi)
@@ -64,6 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('LikeToggled', e.returnValues);
             renderPosts();
         })
+    contract.events.MediaCreated({ fromBlock: 'latest' })
+        .on('data', e=>{
+            console.log('MediaCreated', e.returnValues);
+            renderMedias();
+        })
+    contract.events.MediaDeleted({ fromBlock: 'latest' })
+        .on('data', e=>{
+            console.log('MediaDeleted', e.returnValues);
+            renderMedias();
+        })
 })
 
 const enterToDapp = () => {
@@ -75,6 +89,83 @@ const enterToDapp = () => {
     dapp.hidden = false;
 
     renderPosts();
+}
+
+const addMedia = async () => {
+    try{
+        const fileInput = document.getElementById('mediaFile');
+        const urlInput = document.getElementById('mediaUrl');
+        const descInput = document.getElementById('mediaDesc');
+
+        let url = urlInput.value.trim();
+        const description = descInput.value || '';
+
+        if(!url && fileInput.files && fileInput.files[0]){
+            // read file as data URL
+            url = await new Promise((res, rej)=>{
+                const fr = new FileReader();
+                fr.onload = ()=> res(fr.result);
+                fr.onerror = rej;
+                fr.readAsDataURL(fileInput.files[0]);
+            });
+        }
+
+        if(!url) return alert('Provide image file or URL');
+
+        await contract.methods.add_media(url, description).send({ from: current_account });
+        // UI will update via event, but force render as fallback
+        renderMedias();
+        // clear inputs
+        urlInput.value = '';
+        descInput.value = '';
+        fileInput.value = '';
+    }catch(e){ console.error(e); alert('Add media failed'); }
+}
+
+const renderMedias = async () => {
+    try{
+        const uploaderFilter = document.getElementById('authorFilter').value.trim();
+        let medias;
+        if(uploaderFilter){
+            medias = await contract.methods.get_medias_by_uploader(uploaderFilter).call();
+        } else {
+            medias = await contract.methods.get_medias().call();
+        }
+
+        const container = document.getElementById('medias');
+        while(container.firstChild) container.removeChild(container.firstChild);
+
+        if(!medias || medias.length === 0){
+            const p = document.createElement('p'); p.textContent = 'No images'; container.appendChild(p); return;
+        }
+
+        for(const m of medias){
+            const card = document.createElement('div'); card.className = 'post-card';
+            const header = document.createElement('div'); header.className = 'post-header';
+            const uploader = document.createElement('div'); uploader.innerHTML = `<span class="author">${m.uploader}</span>`;
+            const time = document.createElement('div'); time.textContent = new Date(Number(m.timestamp) * 1000).toLocaleString();
+            header.appendChild(uploader); header.appendChild(time);
+
+            const img = document.createElement('img'); img.src = m.url; img.style.maxWidth = '100%'; img.style.borderRadius='6px';
+            const desc = document.createElement('div'); desc.className = 'post-message'; desc.textContent = m.description || '';
+
+            const actions = document.createElement('div'); actions.className = 'post-actions';
+            const delBtn = document.createElement('button'); delBtn.textContent = 'Delete';
+            if(current_account && m.uploader.toLowerCase() === current_account.toLowerCase()){
+                delBtn.addEventListener('click', async ()=>{
+                    if(!confirm('Delete this image?')) return;
+                    try{ await contract.methods.delete_media(m.index).send({ from: current_account }); renderMedias(); }catch(e){ console.error(e); alert('Delete failed'); }
+                });
+            } else {
+                delBtn.disabled = true;
+            }
+
+            actions.appendChild(delBtn);
+
+            card.appendChild(header); card.appendChild(img); card.appendChild(desc); card.appendChild(actions);
+            container.appendChild(card);
+        }
+    }catch(e){ console.error(e); }
 }
 
 const connectWallet = async () => {

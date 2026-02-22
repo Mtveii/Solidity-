@@ -42,10 +42,22 @@
         </div>
 
         <div id="posts"></div>
+
+        <h3>Media</h3>
+        <div>
+            <input type="file" id="mediaFile" accept="image/*" />
+            <input id="mediaUrl" placeholder="Or image URL" style="width:100%; padding:8px; margin-top:6px;" />
+            <textarea id="mediaDesc" placeholder="Image description" style="width:100%; margin-top:6px;"></textarea>
+            <div>
+                <button id="addMediaButton">Add Image</button>
+            </div>
+        </div>
+
+        <div id="medias"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@4.16.0/dist/web3.min.js"></script>
-    <script src="./contract_abi.js"></script>
-    <script src="./index.js"></script>
+    <script src="./L10contract_abi.js"></script>
+    <script src="./L10index.js"></script>
 </body>
 </html>

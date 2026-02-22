@@ -18,9 +18,19 @@ contract Forum{
         uint index;
     }
 
+    struct Media{
+        string url;
+        string description;
+        address uploader;
+        uint timestamp;
+        bool isDeleted;
+        uint index;
+    }
+
     error NotOwner(address from);
 
     Post[] posts;
+    Media[] medias;
     // post index => (address => liked)
     mapping(uint => mapping(address => bool)) public liked;
     address owner;
@@ -105,6 +115,8 @@ contract Forum{
 
     event PostDeleted(address indexed author, uint index);
     event LikeToggled(address indexed liker, uint index, bool likedState);
+    event MediaCreated(address indexed uploader, uint index, string url);
+    event MediaDeleted(address indexed uploader, uint index);
 
     error NotAuthor(address from);
 
@@ -116,6 +128,75 @@ contract Forum{
 
         p.deleted = true;
         emit PostDeleted(msg.sender, index);
+        return true;
+    }
+
+    function add_media(string memory url, string memory description) public returns(bool){
+        medias.push(
+            Media(
+                url,
+                description,
+                msg.sender,
+                block.timestamp,
+                false,
+                medias.length
+            )
+        );
+
+        emit MediaCreated(msg.sender, medias.length - 1, url);
+        return true;
+    }
+
+    function get_medias() public view returns(Media[] memory){
+        uint count = 0;
+        for(uint i = 0; i < medias.length; i++){
+            if(!medias[i].isDeleted){
+                count++;
+            }
+        }
+
+        Media[] memory result = new Media[](count);
+        uint j = 0;
+        for(uint i = 0; i < medias.length; i++){
+            if(!medias[i].isDeleted){
+                result[j] = medias[i];
+                j++;
+            }
+        }
+
+        return result;
+    }
+
+    function get_medias_by_uploader(address uploader) public view returns(Media[] memory){
+        uint count = 0;
+        for(uint i = 0; i < medias.length; i++){
+            if(!medias[i].isDeleted && medias[i].uploader == uploader){
+                count++;
+            }
+        }
+
+        Media[] memory result = new Media[](count);
+        uint j = 0;
+        for(uint i = 0; i < medias.length; i++){
+            if(!medias[i].isDeleted && medias[i].uploader == uploader){
+                result[j] = medias[i];
+                j++;
+            }
+        }
+
+        return result;
+    }
+
+    error NotUploader(address from);
+
+    function delete_media(uint index) public returns(bool){
+        require(index < medias.length, "Too big number");
+        Media storage m = medias[index];
+        require(!m.isDeleted, "Already deleted");
+        require(m.uploader == msg.sender, NotUploader(msg.sender));
+
+        m.isDeleted = true;
+        emit MediaDeleted(msg.sender, index);
         return true;
     }
 
